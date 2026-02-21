@@ -1,8 +1,11 @@
 import cv2
 import numpy as np
 import mediapipe as mp
+import pandas as pd
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+from sklearn.ensemble import RandomForestClassifier
+import joblib
 
 # Constants for visualization
 MARGIN = 10  
@@ -11,8 +14,14 @@ FONT_SIZE = 1
 FONT_THICKNESS = 1
 TEXT_COLOR = (255, 0, 0) 
 
+session_history = []
+
 def visualize(image, detection_result) -> np.ndarray:
     """Draws bounding boxes on the input image and returns it."""
+
+    count = len(detection_result.detections)
+
+    
     for detection in detection_result.detections:
         # Draw bounding box
         bbox = detection.bounding_box
@@ -21,6 +30,7 @@ def visualize(image, detection_result) -> np.ndarray:
         
         # Dynamic color based on detection confidence
         probability = round(detection.categories[0].score, 2)
+        
         if probability > 0.8:
             TEXT_COLOR = (0, 255, 0)  # Green for high confidence
         else:
@@ -35,7 +45,7 @@ def visualize(image, detection_result) -> np.ndarray:
         cv2.putText(image, result_text, text_location, cv2.FONT_HERSHEY_PLAIN,
                     FONT_SIZE, TEXT_COLOR, FONT_THICKNESS)
 
-    return image
+    return image, count
 
 # STEP 1: Create an ObjectDetector object with more accurate model
 base_options = python.BaseOptions(model_asset_path='./pretrainedModel/efficientdet_lite0.tflite')
@@ -71,7 +81,7 @@ while True:
     detection_result = detector.detect(mp_image)
 
     # Visualize the bounding boxes and labels
-    annotated_image = visualize(frame, detection_result)
+    annotated_image, current_obj_count = visualize(frame, detection_result)
 
     # Display the annotated image in a window
     cv2.imshow('Real-Time Object Detection', annotated_image)
@@ -84,3 +94,23 @@ while True:
 # Release the camera and close all OpenCV windows
 cap.release()
 cv2.destroyAllWindows()
+
+# --- NEW: POST-PROCESS AND TRAIN ---
+if session_history:
+    # 1. Convert to Pandas DataFrame
+    df = pd.DataFrame(session_history)
+    print("\nSession Data Summary:")
+    print(df.describe())
+
+    # 2. Simple Scikit-Learn Training
+    # We'll train a model to predict if a scene is "Active" (count > 0)
+    X = df[['objects_detected']]
+    y = (df['objects_detected'] > 0).astype(int)
+    
+    clf = RandomForestClassifier(n_estimators=10)
+    clf.fit(X, y)
+    
+    # 3. Save the model for future use
+    joblib.dump(clf, 'mvp_model.pkl')
+    print("\nSuccess: session data saved and model 'mvp_model.pkl' trained.")
+
