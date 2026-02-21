@@ -32,18 +32,18 @@ def visualize(image, detection_result) -> np.ndarray:
         probability = round(detection.categories[0].score, 2)
         
         if probability > 0.8:
-            TEXT_COLOR = (0, 255, 0)  # Green for high confidence
+            color = (0, 255, 0)  # Green for high confidence
         else:
-            TEXT_COLOR = (0, 255, 255)  # Yellow for low confidence
+            color = (0, 255, 255)  # Yellow for low confidence
         
-        cv2.rectangle(image, start_point, end_point, TEXT_COLOR, 3)
+        cv2.rectangle(image, start_point, end_point, color, 3)
 
         # Draw label and score
         category_name = detection.categories[0].category_name
         result_text = f'{category_name} ({probability})'
         text_location = (MARGIN + int(bbox.origin_x), MARGIN + ROW_SIZE + int(bbox.origin_y))
         cv2.putText(image, result_text, text_location, cv2.FONT_HERSHEY_PLAIN,
-                    FONT_SIZE, TEXT_COLOR, FONT_THICKNESS)
+                    FONT_SIZE, color, FONT_THICKNESS)
 
     return image, count
 
@@ -113,4 +113,5 @@ if session_history:
     # 3. Save the model for future use
     joblib.dump(clf, 'mvp_model.pkl')
     print("\nSuccess: session data saved and model 'mvp_model.pkl' trained.")
+
 
