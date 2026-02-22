@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load all datasets
-person1 = pd.read_csv('asl_landmarks.csv')
+person1 = pd.read_csv('asl_landmarks_person1.csv')
 person2 = pd.read_csv('asl_landmarks_person2.csv')
 
 # Combine them

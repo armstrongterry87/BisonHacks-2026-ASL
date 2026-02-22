@@ -3,31 +3,48 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 import pickle
+import numpy as np
 
-# Load ASL landmarks data
+# Load data
 df = pd.read_csv('asl_landmarks_person1.csv')
 
-# Separate features (X) and labels (y)
-X = df.drop('label', axis=1)  # All columns except 'label'
-y = df['label']  # The label column
+print(f"Total samples: {len(df)}")
+print(f"Samples per letter:\n{df['label'].value_counts()}")
 
-# Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X = df.drop('label', axis=1).values
+y = df['label']
 
-# Create and train the model
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+# Normalize each sample (MUST MATCH TRANSLATOR)
+X_normalized = []
+for row in X:
+    landmarks = row.reshape(21, 3)
+    wrist = landmarks[0]
+    centered = landmarks - wrist
+    scale = np.linalg.norm(centered[12])
+    if scale > 0:
+        normalized = centered / scale
+    else:
+        normalized = centered
+    X_normalized.append(normalized.flatten())
+
+X_normalized = np.array(X_normalized)
+
+# Split and train
+X_train, X_test, y_train, y_test = train_test_split(
+    X_normalized, y, test_size=0.2, random_state=42, stratify=y
+)
+
+model = RandomForestClassifier(n_estimators=300, max_depth=25, random_state=42)
 model.fit(X_train, y_train)
 
-# Make predictions
+# Evaluate
 y_pred = model.predict(X_test)
-
-# Evaluate the model
-accuracy = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {accuracy:.4f}")
+print(f"\nAccuracy: {accuracy_score(y_test, y_pred):.4f}")
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
 
-# Save the trained model
+# Save
 with open('asl_model.pkl', 'wb') as f:
     pickle.dump(model, f)
+
 print("\nModel saved as 'asl_model.pkl'")
