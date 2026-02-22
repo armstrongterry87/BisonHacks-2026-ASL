@@ -3,9 +3,10 @@ import pandas as pd
 # Load all datasets
 person1 = pd.read_csv('asl_landmarks_person1.csv')
 person2 = pd.read_csv('asl_landmarks_person2.csv')
+person3 = pd.read_csv('asl_landmarks_person3.csv')
 
 # Combine them
-combined = pd.concat([person1, person2], ignore_index=True)
+combined = pd.concat([person1, person2, person3], ignore_index=True)
 
 # Save merged data
 combined.to_csv('asl_landmarks.csv', index=False)

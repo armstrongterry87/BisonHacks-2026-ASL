@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Translator - SignGuard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #00ccff 0%, #0066cc 100%);
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header .back-btn {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            opacity: 0.9;
+            transition: opacity 0.3s;
+        }
+        .header .back-btn:hover { opacity: 1; }
+        .header h1 {
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mode-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .video-section {
+            flex: 1;
+            min-width: 400px;
+        }
+        .video-container {
+            background: #0a0a1a;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #2a2a5a;
+        }
+        .video-container img {
+            width: 100%;
+            display: block;
+        }
+        
+        .controls-section {
+            flex: 0 0 350px;
+        }
+        
+        .output-box {
+            background: #0f0f2d;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #2a2a5a;
+        }
+        .output-box h3 {
+            color: #00ccff;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .output-text {
+            background: #1a1a3e;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 120px;
+            font-size: 1.4rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+            border: 1px solid #3a3a6a;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 14px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-space { background: #2ed573; color: white; }
+        .btn-backspace { background: #ffa502; color: white; }
+        .btn-clear { background: #ff4757; color: white; }
+        .btn-correct { background: linear-gradient(90deg, #667eea, #764ba2); color: white; }
+        .btn:hover { transform: translateY(-2px); }
+        
+        .tips-box {
+            background: rgba(0, 204, 255, 0.1);
+            border: 1px solid rgba(0, 204, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .tips-box h4 {
+            color: #00ccff;
+            margin-bottom: 12px;
+        }
+        .tips-box ul {
+            color: #aabbcc;
+            font-size: 0.9rem;
+            padding-left: 20px;
+        }
+        .tips-box li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="/" class="back-btn">← Back to Home</a>
+        <h1>💬 ASL Translator</h1>
+        <span class="mode-badge">Communication Mode</span>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="video-section">
+                <div class="video-container">
+                    <img src="{{ url_for('translator_feed') }}" alt="Camera Feed">
+                </div>
+            </div>
+            
+            <div class="controls-section">
+                <div class="output-box">
+                    <h3>Translated Text</h3>
+                    <div class="output-text" id="outputText">(Start signing...)</div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-space" onclick="addSpace()">Space</button>
+                    <button class="btn btn-backspace" onclick="backspace()">⌫</button>
+                    <button class="btn btn-clear" onclick="clearText()">Clear</button>
+                </div>
+                
+                <div class="btn-group" style="margin-top: 10px;">
+                    <button class="btn btn-correct" onclick="correctText()">✨ Auto-Correct</button>
+                </div>
+                
+                <div class="tips-box">
+                    <h4>💡 Tips for Best Results</h4>
+                    <ul>
+                        <li>Keep your hand clearly visible</li>
+                        <li>Use good lighting</li>
+                        <li>Hold each sign steady for ~1 second</li>
+                        <li>Keep a plain background if possible</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        setInterval(function() {
+            fetch('/get_translator_text')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('outputText').innerText = data.text || '(Start signing...)';
+                });
+        }, 500);
+        
+        function clearText() { fetch('/clear_translator_text'); }
+        function backspace() { fetch('/translator_backspace'); }
+        function addSpace() { fetch('/translator_add_space'); }
+        function correctText() {
+            fetch('/correct_translator_text')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('outputText').innerText = data.text;
+                });
+        }
+    </script>
+</body>
+</html>

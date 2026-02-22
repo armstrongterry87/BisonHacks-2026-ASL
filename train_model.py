@@ -6,7 +6,7 @@ import pickle
 import numpy as np
 
 # Load data
-df = pd.read_csv('asl_landmarks_person1.csv')
+df = pd.read_csv('asl_landmarks.csv')
 
 print(f"Total samples: {len(df)}")
 print(f"Samples per letter:\n{df['label'].value_counts()}")
